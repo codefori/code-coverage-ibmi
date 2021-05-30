@@ -29,19 +29,14 @@
 	"activationEvents": [
 		"onStartupFinished", 
 		"onView:coverageView",
-		"onCommand:code-coverage-ibmi.createNewCoverage",
 		"onCommand:code-coverage-ibmi.refreshCoverageView",
-		"onCommand:code-coverage-ibmi.deleteCoverage"
+		"onCommand:code-coverage-ibmi.createNewCoverageTest",
+		"onCommand:code-coverage-ibmi.deleteCoverageTest",
+		"onCommand:code-coverage-ibmi.editCoverageTest"
 	],
 	"main": "./extension",
 	"contributes": {
 		"commands": [
-			{
-				"command": "code-coverage-ibmi.createNewCoverage",
-				"title": "Create new Coverage Test",
-				"category": "IBM i Code Coverage",
-				"icon": "$(add)"
-			},
 			{
 				"command": "code-coverage-ibmi.refreshCoverageView",
 				"title": "Refresh Coverage View",
@@ -49,8 +44,19 @@
 				"icon": "$(refresh)"
 			},
 			{
-				"command": "code-coverage-ibmi.deleteCoverage",
-				"title": "Delete Coverage Test",
+				"command": "code-coverage-ibmi.createNewCoverageTest",
+				"title": "Create new Coverage Test",
+				"category": "IBM i Code Coverage",
+				"icon": "$(add)"
+			},
+			{
+				"command": "code-coverage-ibmi.deleteCoverageTest",
+				"title": "Delete Test",
+				"category": "IBM i Code Coverage"
+			},
+			{
+				"command": "code-coverage-ibmi.editCoverageTest",
+				"title": "Edit Test",
 				"category": "IBM i Code Coverage"
 			}
 		],
@@ -75,7 +81,7 @@
 		"menus": {
 			"view/title": [
 				{
-					"command": "code-coverage-ibmi.createNewCoverage",
+					"command": "code-coverage-ibmi.createNewCoverageTest",
 					"group": "navigation",
 					"when": "view == coverageView"
 				},
@@ -85,7 +91,16 @@
 					"when": "view == coverageView"
 				}
 			],
-			"view/item/context": []
+			"view/item/context": [
+				{
+					"command": "code-coverage-ibmi.editCoverageTest",
+					"when": "view == coverageView && viewItem == coverageTest"
+				},
+				{
+					"command": "code-coverage-ibmi.deleteCoverageTest",
+					"when": "view == coverageView && viewItem == coverageTest"
+				}
+			]
 		}
 	},
 	"scripts": {

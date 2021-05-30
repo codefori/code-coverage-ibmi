@@ -12,7 +12,11 @@ module.exports = class Coverage {
     this.onDidChangeTreeData = this.emitter.event;
 
     context.subscriptions.push(
-      vscode.commands.registerCommand(`code-coverage-ibmi.createNewCoverage`, async () => {
+      vscode.commands.registerCommand(`code-coverage-ibmi.refreshCoverageView`, async () => {
+        this.refresh();
+      }),
+
+      vscode.commands.registerCommand(`code-coverage-ibmi.createNewCoverageTest`, async () => {
         const connection = instance.getConnection();
 
         if (connection)
@@ -21,8 +25,16 @@ module.exports = class Coverage {
           vscode.window.showInformationMessage(`You cannot make a Coverage Test while you are not connected to a remote system.`);
       }),
 
-      vscode.commands.registerCommand(`code-coverage-ibmi.refreshCoverageView`, async () => {
-        this.refresh();
+      vscode.commands.registerCommand(`code-coverage-ibmi.deleteCoverageTest`, async (node) => {
+        if (node) {
+          this.deleteTest(node.test.id);
+        }
+      }),
+
+      vscode.commands.registerCommand(`code-coverage-ibmi.editCoverageTest`, async (node) => {
+        if (node) {
+          this.maintainTest(node.test.id);
+        }
       }),
     );
 
@@ -41,16 +53,32 @@ module.exports = class Coverage {
     if (!tests) {
       tests = [];
       await config.set(`coverageTests`, tests);
+    } else {
+      tests.forEach((test, index) => {
+        test.id = index;
+      });
     }
 
     return tests;
   }
 
+  async deleteTest(id) {
+    const config = instance.getConfig();
+    let tests = config.get(`coverageTests`);
+
+    if (tests[id]) {
+      tests.splice(id, 1);
+
+      config.set(`coverageTests`, tests);
+      this.refresh();
+    }
+  }
+
   /**
    * Load and display the UI to create/edit a coverage test
-   * @param {number|-1} index 
+   * @param {number|-1} id Test ID
    */
-  async maintainTest(index) {
+  async maintainTest(id) {
     const config = instance.getConfig();
     let tests = config.get(`coverageTests`);
 
@@ -60,8 +88,8 @@ module.exports = class Coverage {
       program: `LIB/PGM`
     }
 
-    if (index && index >= 0) {
-      fields = tests[index];
+    if (id && id >= 0) {
+      fields = tests[id];
     }
 
     let wizard = new CustomUI();
@@ -93,8 +121,8 @@ module.exports = class Coverage {
 
         fields = data;
 
-        if (index && index >= 0) {
-          tests[index] = fields;
+        if (id && id >= 0) {
+          tests[id] = fields;
         } else {
           tests.push(fields);
         }
@@ -132,7 +160,7 @@ module.exports = class Coverage {
       const tests = await this.getTests();
 
       if (tests.length > 0) {
-        items = tests.map(test => new vscode.TreeItem(test.name));
+        items = tests.map(test => new CoverageTest(test));
       } else {
         items = [new vscode.TreeItem(`No coverage tests found.`)];
       }
@@ -142,5 +170,20 @@ module.exports = class Coverage {
     }
 
     return items;
+  }
+}
+
+class CoverageTest extends vscode.TreeItem {
+  /**
+   * @param {{name: string, runCommand: string, program: string}} data 
+   */
+  constructor(data) {
+    super(data.name, vscode.TreeItemCollapsibleState.None);
+    this.contextValue = `coverageTest`;
+
+    this.test = data;
+    this.tooltip = data.runCommand;
+
+    this.iconPath = new vscode.ThemeIcon(`testing-run-icon`);
   }
 }
