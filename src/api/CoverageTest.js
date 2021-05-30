@@ -128,6 +128,11 @@ module.exports = class CoverageTest {
     for (const char of string) {
       switch (char) {
       case `#`:
+        if (currentValue !== ``) {
+          line = Number(currentValue);
+          lineNumbers.push(line);
+        }
+
         concat = true;
         line = 0;
         currentValue = ``;
@@ -159,7 +164,7 @@ module.exports = class CoverageTest {
   }
 
   getRunLines(numLines, hits) {
-    let hitLines = [];
+    let hitLines =  [];
   
     let hitChar;
     for (let i = 0, lineIndex = 0; lineIndex < numLines && i < hits.length; i++) {
@@ -171,7 +176,8 @@ module.exports = class CoverageTest {
         if (hitChar === 0) {
           lineIndex += 4;
         } else {
-          if ((hitChar & 8) !== 0) hitLines.push(lineIndex);
+          if ((hitChar & 8) !== 0) 
+            hitLines.push(lineIndex);
           lineIndex++;
           if ((hitChar & 4) !== 0 && lineIndex < numLines)
             hitLines.push(lineIndex);
