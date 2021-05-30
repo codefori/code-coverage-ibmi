@@ -160,7 +160,7 @@ module.exports = class Coverage {
     wizard.addField(field);
 
     field = new Field(`input`, `program`, `Program`);
-    field.description = `The name of the program you want to be included in the coverage test. This usually the program you are calling in your coverage test.`
+    field.description = `The name of the program you want to be included in the coverage test. This usually the program you are calling in your coverage test. It is recommended the program has <code>DBGVIEW(*SOURCE)</code>.`
     field.default = fields.program;
     wizard.addField(field);
 
