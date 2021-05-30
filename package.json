@@ -40,7 +40,7 @@
 		"commands": [
 			{
 				"command": "code-coverage-ibmi.refreshCoverageView",
-				"title": "Refresh Coverage View",
+				"title": "Re-run all open Tests",
 				"category": "IBM i Code Coverage",
 				"icon": "$(refresh)"
 			},

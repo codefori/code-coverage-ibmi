@@ -84,7 +84,8 @@ module.exports = class CoverageTest {
 
     console.log(`XML parser`);
 
-    let data, testCase, sourceCode, indexesExecuted;
+    let data, testCase, sourceCode,  activeLines, indexesExecuted;
+    let lineKeys, percentRan, countRan;
     for (const source of coverageResult.LLC.lineLevelCoverageClass) {
       console.log(source.testcase);
       data = source[`$`];
@@ -104,14 +105,26 @@ module.exports = class CoverageTest {
       ).split(EOL);
 
       indexesExecuted = this.getRunLines(sourceCode.length, testCase.hits);
+      activeLines = this.getLines(data.lines, indexesExecuted);
+
+      lineKeys = Object.keys(activeLines);
+
+      countRan = 0;
+      lineKeys.forEach(key => {
+        if (activeLines[key] === true) countRan++;
+      })
+
+      percentRan = ((countRan / lineKeys.length) * 100).toFixed(0);
 
       items.push({
+        basename: path.basename(data.sourceFile),
         path: data.sourceFile,
         coverage: {
           signitures: data.signatures.split(`+`),
-          sourceCode: sourceCode,
+          sourceCode,
           lineString: data.lines,
-          activeLines: this.getLines(data.lines, indexesExecuted),
+          activeLines,
+          percentRan
         },
       });
     }
@@ -138,6 +151,7 @@ module.exports = class CoverageTest {
         currentValue = ``;
         break;
       case `,`:
+        currentValue = ``;
         break;
       case `+`:
         line = Number(currentValue);

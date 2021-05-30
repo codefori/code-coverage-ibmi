@@ -252,10 +252,10 @@ class CoverageTestItem extends vscode.TreeItem {
 
 class CoverageFile extends vscode.TreeItem {
   /**
-   * @param {{path: string, data: {}}} info 
+   * @param {{path: string, coverage: {}}} info 
    */
   constructor(info) {
-    super(info.path, vscode.TreeItemCollapsibleState.None);
+    super(info.basename, vscode.TreeItemCollapsibleState.None);
     this.contextValue = `coverageFile`;
 
     this.command = {
@@ -264,6 +264,18 @@ class CoverageFile extends vscode.TreeItem {
       arguments: [info.path, info.coverage]
     }
 
-    this.iconPath = new vscode.ThemeIcon(`file-code`);
+    const percentRan = info.coverage.percentRan;
+    let color;
+
+    if (percentRan > 75) {
+      color = `charts.green`;
+    } else 
+    if (percentRan > 25) {
+      color = `list.warningForeground`;
+    } else {
+      color = `list.errorForeground`;
+    }
+
+    this.iconPath = new vscode.ThemeIcon(`file-code`, new vscode.ThemeColor(color));
   }
 }
