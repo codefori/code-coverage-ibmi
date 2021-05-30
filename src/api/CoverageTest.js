@@ -6,7 +6,6 @@ const path = require(`path`);
 const fs = require(`fs`);
 const unzipper = require(`unzipper`);
 const util = require(`util`);
-const EOL = `\n`;
 let parseString = util.promisify(require(`xml2js`).parseString);
 
 const tmpFile = util.promisify(tmp.file);
@@ -102,7 +101,7 @@ module.exports = class CoverageTest {
           path.join(tmpdir, `src`, data.baseFileName),
           `utf8`,
         )
-      ).split(EOL);
+      ).split(`\n`);
 
       indexesExecuted = this.getRunLines(sourceCode.length, testCase.hits);
       activeLines = this.getLines(data.lines, indexesExecuted);
@@ -119,9 +118,9 @@ module.exports = class CoverageTest {
       items.push({
         basename: path.basename(data.sourceFile),
         path: data.sourceFile,
+        localPath: path.join(tmpdir, `src`, data.baseFileName),
         coverage: {
           signitures: data.signatures.split(`+`),
-          sourceCode,
           lineString: data.lines,
           activeLines,
           percentRan

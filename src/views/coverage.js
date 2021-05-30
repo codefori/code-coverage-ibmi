@@ -1,5 +1,8 @@
 
 const vscode = require(`vscode`);
+const fs = require(`fs`);
+const util = require(`util`);
+const readFileAsync = util.promisify(fs.readFile);
 
 const {instance, Field, CustomUI} = vscode.extensions.getExtension(`halcyontechltd.code-for-ibmi`).exports;
 
@@ -21,7 +24,16 @@ module.exports = class Coverage {
     this.emitter = new vscode.EventEmitter();
     this.onDidChangeTreeData = this.emitter.event;
 
+    const myProvider = new (class  {
+      async provideTextDocumentContent(uri) {
+        const content = await readFileAsync(uri.path);
+        return content.toString(`utf8`);
+      }
+    })();
+
     context.subscriptions.push(
+      vscode.workspace.registerTextDocumentContentProvider(`coverageResult`, myProvider),
+
       vscode.commands.registerCommand(`code-coverage-ibmi.refreshCoverageView`, async () => {
         this.refresh();
       }),
@@ -65,11 +77,8 @@ module.exports = class Coverage {
   async displayCoverageFile(path, coverage) {
     console.log(coverage);
 
-    const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:` + path));
+    const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`coverageResult:` + path));
     const editor = await vscode.window.showTextDocument(textDoc);
-    editor.edit(edit => {
-      edit.insert(new vscode.Position(0, 0), coverage.sourceCode.join(`\n`));
-    });
 
     /** @type {vscode.DecorationOptions[]} */
     let runDecorations = [];
@@ -261,7 +270,7 @@ class CoverageFile extends vscode.TreeItem {
     this.command = {
       command: `code-coverage-ibmi.displayCoverageFile`,
       title: `Display coverage`,
-      arguments: [info.path, info.coverage]
+      arguments: [info.localPath, info.coverage]
     }
 
     const percentRan = info.coverage.percentRan;
