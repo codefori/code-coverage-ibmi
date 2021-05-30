@@ -1,0 +1,111 @@
+{
+	"name": "code-coverage-ibmi",
+	"displayName": "Code Coverage for IBM i",
+	"description": "Run and display Code Coverage on your IBM i right from VS Code.",
+	"version": "0.0.1",
+	"repository": {
+		"url": "https://github.com/halcyon-tech/code-coverage-ibmi"
+	},
+	"engines": {
+		"vscode": "^1.54.0"
+	},
+	"keywords": [
+		"git",
+		"ibmi",
+		"iseries",
+		"as400"
+	],
+	"author": {
+		"name": "Halcyon Tech Ltd",
+		"url": "https://github.com/halcyon-tech"
+	},
+	"publisher": "halcyontechltd",
+	"extensionDependencies": [
+		"halcyontechltd.code-for-ibmi"
+	],
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished", 
+		"onView:coverageView",
+		"onCommand:code-coverage-ibmi.createNewCoverage",
+		"onCommand:code-coverage-ibmi.refreshCoverageView",
+		"onCommand:code-coverage-ibmi.deleteCoverage"
+	],
+	"main": "./extension",
+	"contributes": {
+		"commands": [
+			{
+				"command": "code-coverage-ibmi.createNewCoverage",
+				"title": "Create new Coverage Test",
+				"category": "IBM i Code Coverage",
+				"icon": "$(add)"
+			},
+			{
+				"command": "code-coverage-ibmi.refreshCoverageView",
+				"title": "Refresh Coverage View",
+				"category": "IBM i Code Coverage",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "code-coverage-ibmi.deleteCoverage",
+				"title": "Delete Coverage Test",
+				"category": "IBM i Code Coverage"
+			}
+		],
+		"viewsWelcome": [],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "ibmi-code-coverage",
+					"title": "IBM i Code Coverage",
+					"icon": "$(test-view-icon)"
+				}
+			]
+		},
+		"views": {
+			"ibmi-code-coverage": [
+				{
+					"id": "coverageView",
+					"name": "Tests"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "code-coverage-ibmi.createNewCoverage",
+					"group": "navigation",
+					"when": "view == coverageView"
+				},
+				{
+					"command": "code-coverage-ibmi.refreshCoverageView",
+					"group": "navigation",
+					"when": "view == coverageView"
+				}
+			],
+			"view/item/context": []
+		}
+	},
+	"scripts": {
+		"pretest": "npm run lint",
+		"lint": "eslint src",
+		"package": "vsce package"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.54.0",
+		"@types/glob": "^7.1.3",
+		"@types/mocha": "^8.0.4",
+		"@types/node": "^12.11.7",
+		"eslint": "^7.19.0",
+		"@typescript-eslint/eslint-plugin": "^4.14.1",
+		"@typescript-eslint/parser": "^4.14.1",
+		"glob": "^7.1.6",
+		"mocha": "^8.2.1",
+		"vscode-test": "^1.5.0"
+	},
+	"dependencies": {
+		"tmp": "^0.2.1"
+	}
+}
