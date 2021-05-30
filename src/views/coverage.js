@@ -3,6 +3,16 @@ const vscode = require(`vscode`);
 
 const {instance, Field, CustomUI} = vscode.extensions.getExtension(`halcyontechltd.code-for-ibmi`).exports;
 
+const CoverageTest = require(`../api/CoverageTest`);
+
+const greenLine = vscode.window.createTextEditorDecorationType({
+  backgroundColor: `rgba(55, 218, 1, 0.3)`
+})
+
+const redLine = vscode.window.createTextEditorDecorationType({
+  backgroundColor: `rgba(218, 1, 1, 0.3)`
+})
+
 module.exports = class Coverage {
   /**
    * @param {vscode.ExtensionContext} context
@@ -36,11 +46,55 @@ module.exports = class Coverage {
           this.maintainTest(node.test.id);
         }
       }),
+
+      vscode.commands.registerCommand(`code-coverage-ibmi.displayCoverageFile`, async (path, data) => {
+        this.displayCoverageFile(path, data);
+      }),
+
     );
 
     instance.on(`connected`, () => {
       this.refresh();
     });
+  }
+
+  /**
+   * @param {string} path
+   * @param {{activeLines: {[line: number]: boolean}[], lineString: string, signitures: string[], sourceCode: string[]}} coverage 
+   */
+  async displayCoverageFile(path, coverage) {
+    console.log(coverage);
+
+    const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`untitled:` + path));
+    const editor = await vscode.window.showTextDocument(textDoc);
+    editor.edit(edit => {
+      edit.insert(new vscode.Position(0, 0), coverage.sourceCode.join(`\n`));
+    });
+
+    /** @type {vscode.DecorationOptions[]} */
+    let runDecorations = [];
+
+    /** @type {vscode.DecorationOptions[]} */
+    let notrunDecorations = [];
+
+    let lineNumber;
+    for (const line in coverage.activeLines) {
+      lineNumber = Number(line)-1;
+
+      if (coverage.activeLines[line] === true) {
+        runDecorations.push({
+          range: new vscode.Range(lineNumber, 0, lineNumber, 100),
+        })
+
+      } else if (coverage.activeLines[line] === false) {
+        notrunDecorations.push({
+          range: new vscode.Range(lineNumber, 0, lineNumber, 100),
+        })
+      }
+    }
+
+    editor.setDecorations(greenLine, runDecorations);
+    editor.setDecorations(redLine, notrunDecorations)
   }
 
   /**
@@ -147,7 +201,7 @@ module.exports = class Coverage {
   }
 
   /**
-   * @param {vscode.TreeItem} [element] 
+   * @param {CoverageTestItem} [element] 
    * @returns {Promise<vscode.TreeItem[]>}
    */
   async getChildren(element) {
@@ -157,12 +211,20 @@ module.exports = class Coverage {
     let items = [];
 
     if (connection) {
-      const tests = await this.getTests();
+      if (element) {
 
-      if (tests.length > 0) {
-        items = tests.map(test => new CoverageTest(test));
+        const runningTest = new CoverageTest(element.test);
+        const result = await runningTest.runConverage();
+
+        items = result.map(result => new CoverageFile(result));
       } else {
-        items = [new vscode.TreeItem(`No coverage tests found.`)];
+        const tests = await this.getTests();
+
+        if (tests.length > 0) {
+          items = tests.map(test => new CoverageTestItem(test));
+        } else {
+          items = [new vscode.TreeItem(`No coverage tests found.`)];
+        }
       }
 
     } else {
@@ -173,17 +235,35 @@ module.exports = class Coverage {
   }
 }
 
-class CoverageTest extends vscode.TreeItem {
+class CoverageTestItem extends vscode.TreeItem {
   /**
    * @param {{name: string, runCommand: string, program: string}} data 
    */
   constructor(data) {
-    super(data.name, vscode.TreeItemCollapsibleState.None);
+    super(data.name, vscode.TreeItemCollapsibleState.Collapsed);
     this.contextValue = `coverageTest`;
 
     this.test = data;
     this.tooltip = data.runCommand;
 
     this.iconPath = new vscode.ThemeIcon(`testing-run-icon`);
+  }
+}
+
+class CoverageFile extends vscode.TreeItem {
+  /**
+   * @param {{path: string, data: {}}} info 
+   */
+  constructor(info) {
+    super(info.path, vscode.TreeItemCollapsibleState.None);
+    this.contextValue = `coverageFile`;
+
+    this.command = {
+      command: `code-coverage-ibmi.displayCoverageFile`,
+      title: `Display coverage`,
+      arguments: [info.path, info.coverage]
+    }
+
+    this.iconPath = new vscode.ThemeIcon(`file-code`);
   }
 }

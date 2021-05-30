@@ -27,12 +27,13 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onStartupFinished", 
+		"onStartupFinished",
 		"onView:coverageView",
 		"onCommand:code-coverage-ibmi.refreshCoverageView",
 		"onCommand:code-coverage-ibmi.createNewCoverageTest",
 		"onCommand:code-coverage-ibmi.deleteCoverageTest",
-		"onCommand:code-coverage-ibmi.editCoverageTest"
+		"onCommand:code-coverage-ibmi.editCoverageTest",
+		"onCommand:code-coverage-ibmi.runCoverageTest"
 	],
 	"main": "./extension",
 	"contributes": {
@@ -57,6 +58,16 @@
 			{
 				"command": "code-coverage-ibmi.editCoverageTest",
 				"title": "Edit Test",
+				"category": "IBM i Code Coverage"
+			},
+			{
+				"command": "code-coverage-ibmi.runCoverageTest",
+				"title": "Run Test",
+				"category": "IBM i Code Coverage"
+			},
+			{
+				"command": "code-coverage-ibmi.displayCoverageFile",
+				"title": "Display Coverage File",
 				"category": "IBM i Code Coverage"
 			}
 		],
@@ -93,6 +104,10 @@
 			],
 			"view/item/context": [
 				{
+					"command": "code-coverage-ibmi.runCoverageTest",
+					"when": "view == coverageView && viewItem == coverageTest"
+				},
+				{
 					"command": "code-coverage-ibmi.editCoverageTest",
 					"when": "view == coverageView && viewItem == coverageTest"
 				},
@@ -121,6 +136,8 @@
 		"vscode-test": "^1.5.0"
 	},
 	"dependencies": {
-		"tmp": "^0.2.1"
+		"tmp": "^0.2.1",
+		"unzipper": "^0.10.11",
+		"xml2js": "^0.4.23"
 	}
 }
