@@ -1,0 +1,22 @@
+on:
+  release:
+    types: [created]
+    
+jobs:
+  release:
+    name: Release and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: npm install
+      - uses: lannonbr/vsce-action@master
+        with:
+          args: "package"
+      - uses: xresloader/upload-to-github-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "*.vsix" 
+          verbose: true
+          update_latest_release: true
+          draft: false
