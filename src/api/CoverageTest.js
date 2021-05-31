@@ -150,6 +150,10 @@ module.exports = class CoverageTest {
         currentValue = ``;
         break;
       case `,`:
+        if (currentValue !== ``) {
+          line = Number(currentValue);
+          lineNumbers.push(line);
+        }
         currentValue = ``;
         break;
       case `+`:
