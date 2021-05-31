@@ -17,11 +17,41 @@ const {instance} = vscode.extensions.getExtension(`halcyontechltd.code-for-ibmi`
 module.exports = class CoverageTest {
   /**
    * Create a coverage test
-   * @param {{runCommand: string, program: string}} data 
+   * @param {{runCommand: string, program: string, bindingDirectory?: string}} data 
    */
   constructor(data) {
     this.command = data.runCommand;
     this.program = data.program;
+    this.bindingDirectory = data.bindingDirectory;
+  }
+
+  /**
+   * Returns a list of service programs from a binding directory
+   * @param {string} path Path to binding directory
+   * @returns {string[]}
+   */
+  static async getServicePrograms(path) {
+    const connection = instance.getConnection();
+    const content = instance.getContent();
+    const config = instance.getConfig();
+
+    const tempLib = config.tempLibrary;
+
+    let TempName = `C` + new Date().getTime().toString();
+    if (TempName.length > 10) TempName = TempName.substr(0, 10);
+
+    await connection.remoteCommand(`DSPBNDDIR BNDDIR(${path}) OUTPUT(*OUTFILE) OUTFILE(${tempLib}/${TempName})`);
+    const results = await content.getTable(tempLib, TempName, TempName);
+
+    if (results.length === 1) {
+      if (results[0].BNOLNM.trim() === ``) {
+        return []
+      }
+    }
+
+    return results
+      .filter(result => result.BNOBTP === `*SRVPGM`)
+      .map(result => `(${result.BNOLNM}/${result.BNOBNM} ${result.BNOBTP} *ALL)`);
   }
 
   async runConverage() {
@@ -35,20 +65,27 @@ module.exports = class CoverageTest {
 
     let libl = config.libraryList.slice(0).reverse();
 
-    libl = libl.map(library => {
-      //We use this for special variables in the libl
-      switch (library) {
-      case `&BUILDLIB`: return config.currentLibrary;
-      case `&CURLIB`: return config.currentLibrary;
-      default: return library;
+    let moduleList = [`(${this.program} *PGM *ALL)`], promises = [];
+
+    if (this.bindingDirectory) {
+      if (this.bindingDirectory.trim().length > 0) {
+        for (const path of this.bindingDirectory.split(`,`)) {
+          promises.push(CoverageTest.getServicePrograms(path));
+        }
+        
+        const lists = await Promise.all(promises);
+
+        lists.forEach(list => {
+          moduleList.push(...list);
+        });
       }
-    });
+    }
 
     await connection.qshCommand([
       `liblist -d ` + connection.defaultUserLibraries.join(` `),
       `liblist -c ` + config.currentLibrary,
       `liblist -a ` + libl.join(` `),
-      `system -s "CODECOV CMD(${this.command}) MODULE((${this.program} *PGM *ALL)) OUTSTMF('${outputZip}')"`,
+      `system -s "CODECOV CMD(${this.command}) MODULE(${moduleList.join(` `)}) OUTSTMF('${outputZip}')"`,
     ]);
 
     items = await this.getCoverage(outputZip);

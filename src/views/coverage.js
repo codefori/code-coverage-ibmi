@@ -148,7 +148,8 @@ module.exports = class Coverage {
     let fields = {
       name: ``,
       runCommand: `CALL LIB/PGM`,
-      program: `LIB/PGM`
+      program: `LIB/PGM`,
+      bindingDirectory: ``
     }
 
     if (id && id >= 0) {
@@ -171,6 +172,11 @@ module.exports = class Coverage {
     field = new Field(`input`, `program`, `Program`);
     field.description = `The name of the program you want to be included in the coverage test. This usually the program you are calling in your coverage test. It is recommended the program has <code>DBGVIEW(*SOURCE)</code>.`
     field.default = fields.program;
+    wizard.addField(field);
+
+    field = new Field(`input`, `bindingDirectory`, `Binding directory`);
+    field.description = `If you specify a binding directory, the coverage test will include the results for the service programs in that object if they are used by the program. You can leave this blank to not include them.`
+    field.default = fields.bindingDirectory;
     wizard.addField(field);
 
     field = new Field(`submit`, `save`, `Save`);
