@@ -10,11 +10,10 @@ const CoverageTest = require(`../api/CoverageTest`);
 
 const greenLine = vscode.window.createTextEditorDecorationType({
   backgroundColor: `rgba(55, 218, 1, 0.3)`
-})
-
+});
 const redLine = vscode.window.createTextEditorDecorationType({
   backgroundColor: `rgba(218, 1, 1, 0.3)`
-})
+});
 
 module.exports = class Coverage {
   /**
@@ -23,6 +22,9 @@ module.exports = class Coverage {
   constructor(context) {
     this.emitter = new vscode.EventEmitter();
     this.onDidChangeTreeData = this.emitter.event;
+
+    /** @type {{[path: string]: {runDecorations: vscode.DecorationOptions[], notrunDecorations: vscode.DecorationOptions[]}}} */
+    this.coverageFiles = {};
 
     const myProvider = new (class  {
       async provideTextDocumentContent(uri) {
@@ -33,6 +35,16 @@ module.exports = class Coverage {
 
     context.subscriptions.push(
       vscode.workspace.registerTextDocumentContentProvider(`coverageResult`, myProvider),
+
+      vscode.window.onDidChangeVisibleTextEditors(editors => {
+        //We need this to re-render coverage lines
+
+        editors.forEach(editor => {
+          if (editor.document.uri.scheme === `coverageResult`) {
+            this.renderCoverage(editor);
+          }
+        })
+      }),
 
       vscode.commands.registerCommand(`code-coverage-ibmi.refreshCoverageView`, async () => {
         this.refresh();
@@ -60,7 +72,7 @@ module.exports = class Coverage {
       }),
 
       vscode.commands.registerCommand(`code-coverage-ibmi.displayCoverageFile`, async (path, data) => {
-        this.displayCoverageFile(path, data);
+        this.openCoverageFile(path, data);
       }),
 
     );
@@ -71,10 +83,25 @@ module.exports = class Coverage {
   }
 
   /**
+   * Render coverage lines onto document
+   * @param {vscode.TextEditor} editor 
+   */
+  renderCoverage(editor) {
+    const path = editor.document.uri.path;
+
+    if (this.coverageFiles[path]) {
+      const coverage = this.coverageFiles[path];
+      editor.setDecorations(greenLine, coverage.runDecorations);
+      editor.setDecorations(redLine, coverage.notrunDecorations);
+    }
+  }
+
+  /**
+   * Opens and stores line decorations into coverageFiles
    * @param {string} path
    * @param {{activeLines: {[line: number]: boolean}[], lineString: string, signitures: string[], sourceCode: string[]}} coverage 
    */
-  async displayCoverageFile(path, coverage) {
+  async openCoverageFile(path, coverage) {
     console.log(coverage);
 
     const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`coverageResult:` + path));
@@ -102,8 +129,12 @@ module.exports = class Coverage {
       }
     }
 
-    editor.setDecorations(greenLine, runDecorations);
-    editor.setDecorations(redLine, notrunDecorations)
+    this.coverageFiles[path] = {
+      runDecorations,
+      notrunDecorations
+    };
+
+    this.renderCoverage(editor);
   }
 
   /**
