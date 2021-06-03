@@ -2,6 +2,7 @@
 const vscode = require(`vscode`);
 const fs = require(`fs`);
 const util = require(`util`);
+const path = require(`path`);
 const readFileAsync = util.promisify(fs.readFile);
 
 const {instance, Field, CustomUI} = vscode.extensions.getExtension(`halcyontechltd.code-for-ibmi`).exports;
@@ -87,26 +88,22 @@ module.exports = class Coverage {
    * @param {vscode.TextEditor} editor 
    */
   renderCoverage(editor) {
-    const path = editor.document.uri.path;
+    const docPath = editor.document.uri.path;
 
-    if (this.coverageFiles[path]) {
-      const coverage = this.coverageFiles[path];
+    if (this.coverageFiles[docPath]) {
+      const coverage = this.coverageFiles[docPath];
       editor.setDecorations(greenLine, coverage.runDecorations);
       editor.setDecorations(redLine, coverage.notrunDecorations);
     }
   }
 
   /**
-   * Opens and stores line decorations into coverageFiles
-   * @param {string} path
+   * Stores line decorations into coverageFiles
+   * Also opens to coverage if an old version is open.
+   * @param {string} coveragePath
    * @param {{activeLines: {[line: number]: boolean}[], lineString: string, signitures: string[], sourceCode: string[]}} coverage 
    */
-  async openCoverageFile(path, coverage) {
-    console.log(coverage);
-
-    const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`coverageResult:` + path));
-    const editor = await vscode.window.showTextDocument(textDoc);
-
+  storeCoverage(coveragePath, coverage) {
     /** @type {vscode.DecorationOptions[]} */
     let runDecorations = [];
 
@@ -129,10 +126,25 @@ module.exports = class Coverage {
       }
     }
 
-    this.coverageFiles[path] = {
+    this.coverageFiles[coveragePath] = {
       runDecorations,
       notrunDecorations
     };
+
+    const existingEditor = vscode.window.visibleTextEditors.find(editor => path.basename(editor.document.uri.path) === path.basename(coveragePath));
+    if (existingEditor) this.openCoverageFile(coveragePath);
+  }
+
+  /**
+   * Opens and stores line decorations into coverageFiles
+   * @param {string} coveragePath
+   */
+  async openCoverageFile(coveragePath) {
+    const existingEditor = vscode.window.visibleTextEditors.find(editor => path.basename(editor.document.uri.path) === path.basename(coveragePath));
+    let column = (existingEditor ? existingEditor.viewColumn : vscode.ViewColumn.Beside);
+
+    const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`coverageResult:` + coveragePath));
+    const editor = await vscode.window.showTextDocument(textDoc, column);
 
     this.renderCoverage(editor);
   }
@@ -261,6 +273,8 @@ module.exports = class Coverage {
 
         const runningTest = new CoverageTest(element.test);
         const result = await runningTest.runConverage();
+
+        result.forEach(test => this.storeCoverage(test.localPath, test.coverage));
 
         items = result.map(result => new CoverageFile(result));
       } else {
