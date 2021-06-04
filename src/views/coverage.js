@@ -53,12 +53,25 @@ module.exports = class Coverage {
         this.refresh();
       }),
 
-      vscode.commands.registerCommand(`code-coverage-ibmi.createNewCoverageTest`, async () => {
+      vscode.commands.registerCommand(`code-coverage-ibmi.createNewCoverageTest`, async (memberNode) => {
         const connection = instance.getConnection();
 
-        if (connection)
-          this.maintainTest(-1);
-        else
+        let defaults = {};
+
+        if (connection) {
+          if (memberNode) {
+            const [lib, sourceFile, baseName] = memberNode.path.split(`/`);
+            const noExt = baseName.substr(0, baseName.lastIndexOf(`.`));
+
+            defaults = {
+              name: `Test ${lib}/${noExt}`,
+              runCommand: `CALL ${lib}/${noExt}`,
+              program: `${lib}/${noExt}`
+            };
+          }
+
+          this.maintainTest(-1, defaults);
+        } else
           vscode.window.showInformationMessage(`You cannot make a Coverage Test while you are not connected to a remote system.`);
       }),
 
@@ -185,16 +198,17 @@ module.exports = class Coverage {
   /**
    * Load and display the UI to create/edit a coverage test
    * @param {number|-1} id Test ID
+   * @param {{name?: string, runCommand?: string, program?: string, bindingDirectory?: string}} defaults
    */
-  async maintainTest(id) {
+  async maintainTest(id, defaults = {}) {
     const config = instance.getConfig();
     let tests = config.get(`coverageTests`);
 
     let fields = {
-      name: ``,
-      runCommand: `CALL LIB/PGM`,
-      program: `LIB/PGM`,
-      bindingDirectory: ``
+      name: defaults.name || ``,
+      runCommand: defaults.runCommand || `CALL LIB/PGM`,
+      program: defaults.program || `LIB/PGM`,
+      bindingDirectory: defaults.bindingDirectory || ``
     }
 
     if (id >= 0) {
@@ -235,7 +249,7 @@ module.exports = class Coverage {
 
         fields = data;
 
-        if (id && id >= 0) {
+        if (id >= 0) {
           tests[id] = fields;
         } else {
           tests.push(fields);

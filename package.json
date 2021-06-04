@@ -114,6 +114,11 @@
 				{
 					"command": "code-coverage-ibmi.deleteCoverageTest",
 					"when": "view == coverageView && viewItem == coverageTest"
+				},
+				{
+					"command": "code-coverage-ibmi.createNewCoverageTest",
+					"when": "view == memberBrowser && viewItem == member",
+					"group": "3_memberStuff@1"
 				}
 			]
 		}
