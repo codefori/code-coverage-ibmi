@@ -186,6 +186,7 @@ module.exports = class CoverageTest {
         line = 0;
         currentValue = ``;
         break;
+
       case `,`:
         if (currentValue !== ``) {
           line = Number(currentValue);
@@ -193,14 +194,17 @@ module.exports = class CoverageTest {
         }
         currentValue = ``;
         break;
+
       case `+`:
         line = Number(currentValue);
         lineNumbers.push(line);
         concat = false;
         break;
+
       default:
         if (concat) currentValue += char;
         else {
+          currentValue = ``
           line += Number(char);
           lineNumbers.push(line);
         }
