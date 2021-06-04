@@ -141,7 +141,7 @@ module.exports = class Coverage {
    */
   async openCoverageFile(coveragePath) {
     const existingEditor = vscode.window.visibleTextEditors.find(editor => path.basename(editor.document.uri.path) === path.basename(coveragePath));
-    let column = (existingEditor ? existingEditor.viewColumn : vscode.ViewColumn.Beside);
+    let column = (existingEditor ? existingEditor.viewColumn : undefined);
 
     const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(`coverageResult:` + coveragePath));
     const editor = await vscode.window.showTextDocument(textDoc, column);
@@ -195,7 +195,7 @@ module.exports = class Coverage {
       bindingDirectory: ``
     }
 
-    if (id && id >= 0) {
+    if (id >= 0) {
       fields = tests[id];
     }
 
@@ -315,7 +315,9 @@ class CoverageFile extends vscode.TreeItem {
    * @param {{path: string, coverage: {}}} info 
    */
   constructor(info) {
-    super(info.basename, vscode.TreeItemCollapsibleState.None);
+    const percentRan = info.coverage.percentRan;
+    super(`${info.basename} (${percentRan}%)`, vscode.TreeItemCollapsibleState.None);
+
     this.contextValue = `coverageFile`;
 
     this.command = {
@@ -324,13 +326,12 @@ class CoverageFile extends vscode.TreeItem {
       arguments: [info.localPath, info.coverage]
     }
 
-    const percentRan = info.coverage.percentRan;
     let color;
 
-    if (percentRan > 75) {
+    if (percentRan == 100) {
       color = `charts.green`;
     } else 
-    if (percentRan > 25) {
+    if (percentRan > 50) {
       color = `list.warningForeground`;
     } else {
       color = `list.errorForeground`;
