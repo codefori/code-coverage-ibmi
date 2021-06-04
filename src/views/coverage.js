@@ -10,10 +10,12 @@ const {instance, Field, CustomUI} = vscode.extensions.getExtension(`halcyontechl
 const CoverageTest = require(`../api/CoverageTest`);
 
 const greenLine = vscode.window.createTextEditorDecorationType({
-  backgroundColor: `rgba(55, 218, 1, 0.3)`
+  backgroundColor: `rgba(55, 218, 1, 0.2)`,
+  isWholeLine: true
 });
 const redLine = vscode.window.createTextEditorDecorationType({
-  backgroundColor: `rgba(218, 1, 1, 0.3)`
+  backgroundColor: `rgba(218, 1, 1, 0.2)`,
+  isWholeLine: true
 });
 
 module.exports = class Coverage {
