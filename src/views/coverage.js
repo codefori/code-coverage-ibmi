@@ -103,7 +103,7 @@ module.exports = class Coverage {
    * @param {vscode.TextEditor} editor 
    */
   renderCoverage(editor) {
-    const docPath = editor.document.uri.path;
+    const docPath = editor.document.uri.path.toUpperCase();
 
     if (this.coverageFiles[docPath]) {
       const coverage = this.coverageFiles[docPath];
@@ -141,7 +141,7 @@ module.exports = class Coverage {
       }
     }
 
-    this.coverageFiles[coveragePath] = {
+    this.coverageFiles[coveragePath.toUpperCase()] = {
       runDecorations,
       notrunDecorations
     };
