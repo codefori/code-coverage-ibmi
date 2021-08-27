@@ -40,3 +40,7 @@ If you head over to the Code Coverage extension tab, you will see your newly cre
 ## How to include other programs 
 
 Right now, you can only run coverage tests directly on specific programs. Instead of specifying many other programs or service programs, we let the user provide a binding directory when creating the coverage test and the extension will automatically include all service programs in that directory in the coverage test.
+
+# Pull requests
+
+We are PR friendly. Due to the nature of the complexity in IBM i Code Coverage, please reach out to us outside of this repository for us to take a look at your issue.
