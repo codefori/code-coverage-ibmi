@@ -11,12 +11,6 @@ jobs:
       - run: npm install
       - uses: lannonbr/vsce-action@master
         with:
-          args: "package"
-      - uses: xresloader/upload-to-github-release@master
+          args: "publish -p $PUBLISHER_TOKEN"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          file: "*.vsix" 
-          verbose: true
-          update_latest_release: true
-          draft: false
+          PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}

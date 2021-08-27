@@ -2,7 +2,7 @@
 	"name": "code-coverage-ibmi",
 	"displayName": "Code Coverage for IBM i",
 	"description": "Run and display Code Coverage on your IBM i right from VS Code.",
-	"version": "0.0.7",
+	"version": "0.1",
 	"repository": {
 		"url": "https://github.com/halcyon-tech/code-coverage-ibmi"
 	},
