@@ -40,18 +40,26 @@ module.exports = class CoverageTest {
     let TempName = `C` + new Date().getTime().toString();
     if (TempName.length > 10) TempName = TempName.substr(0, 10);
 
-    await connection.remoteCommand(`DSPBNDDIR BNDDIR(${path}) OUTPUT(*OUTFILE) OUTFILE(${tempLib}/${TempName})`);
-    const results = await content.getTable(tempLib, TempName, TempName);
+    const bnddir = await vscode.commands.executeCommand(`code-for-ibmi.runCommand`, {
+      command: `DSPBNDDIR BNDDIR(${path}) OUTPUT(*OUTFILE) OUTFILE(${tempLib}/${TempName})`,
+      environment: `ile`
+    });
 
-    if (results.length === 1) {
-      if (results[0].BNOLNM.trim() === ``) {
-        return []
+    if (bnddir.code === 0 || bnddir.code === null) {
+      const results = await content.getTable(tempLib, TempName, TempName);
+
+      if (results.length === 1) {
+        if (results[0].BNOLNM.trim() === ``) {
+          return []
+        }
       }
-    }
 
-    return results
-      .filter(result => result.BNOBTP === `*SRVPGM`)
-      .map(result => `(${result.BNOLNM}/${result.BNOBNM} ${result.BNOBTP} *ALL)`);
+      return results
+        .filter(result => result.BNOBTP === `*SRVPGM`)
+        .map(result => `(${result.BNOLNM}/${result.BNOBNM} ${result.BNOBTP} *ALL)`);
+    } else {
+      return [];
+    }
   }
 
   async runConverage() {
@@ -62,8 +70,6 @@ module.exports = class CoverageTest {
 
     /** @type {ListItem[]} */
     let items = [];
-
-    let libl = config.libraryList.slice(0).reverse();
 
     let moduleList = [`(${this.program} *PGM *ALL)`], promises = [];
 
@@ -81,14 +87,18 @@ module.exports = class CoverageTest {
       }
     }
 
-    await connection.qshCommand([
-      `liblist -d ` + connection.defaultUserLibraries.join(` `),
-      `liblist -c ` + config.currentLibrary,
-      `liblist -a ` + libl.join(` `),
-      `system -s "CODECOV CMD(${this.command}) MODULE(${moduleList.join(` `)}) OUTSTMF('${outputZip}')"`,
-    ]);
+    const bnddir = await vscode.commands.executeCommand(`code-for-ibmi.runCommand`, {
+      command: `CODECOV CMD(${this.command}) MODULE(${moduleList.join(` `)}) OUTSTMF('${outputZip}')`,
+      environment: `ile`
+    });
 
-    items = await this.getCoverage(outputZip);
+    if (bnddir.code === 0 || bnddir.code === null) {
+      items = await this.getCoverage(outputZip);
+
+      return items;
+    } else {
+      vscode.window.showErrorMessage(bnddir.stderr);
+    }
 
     return items;
   }
