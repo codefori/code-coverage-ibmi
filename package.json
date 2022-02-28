@@ -118,7 +118,7 @@
 				},
 				{
 					"command": "code-coverage-ibmi.createNewCoverageTest",
-					"when": "view == memberBrowser && viewItem == member",
+					"when": "view == objectBrowser && viewItem == member",
 					"group": "3_memberStuff@1"
 				}
 			]
