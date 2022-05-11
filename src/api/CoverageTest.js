@@ -150,8 +150,12 @@ module.exports = class CoverageTest {
         )
       ).split(`\n`);
 
-      indexesExecuted = this.getRunLines(sourceCode.length, testCase.hits);
-      activeLines = this.getLines(data.lines, indexesExecuted);
+      const realHits = testCase.v2fileHits || testCase.hits;
+      const realLines = data.v2fileLines || data.lines;
+      const realSigs = data.v2qualifiedSignatures || data.signatures;
+
+      indexesExecuted = this.getRunLines(sourceCode.length, realHits);
+      activeLines = this.getLines(realLines, indexesExecuted);
 
       lineKeys = Object.keys(activeLines);
 
@@ -167,8 +171,8 @@ module.exports = class CoverageTest {
         path: data.sourceFile,
         localPath: path.join(tmpdir, `src`, data.baseFileName),
         coverage: {
-          signitures: data.signatures.split(`+`),
-          lineString: data.lines,
+          signitures: realSigs.split(`+`),
+          lineString: realLines,
           activeLines,
           percentRan
         },
