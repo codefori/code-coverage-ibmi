@@ -86,6 +86,7 @@
 			"ibmi-code-coverage": [
 				{
 					"id": "coverageView",
+					"when": "code-for-ibmi:connected == true",
 					"name": "Tests"
 				}
 			]
