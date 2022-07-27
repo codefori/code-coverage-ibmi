@@ -60,7 +60,10 @@ module.exports = class Coverage {
 
         if (connection) {
           if (memberNode) {
-            const [lib, sourceFile, baseName] = memberNode.path.split(`/`);
+            const parts = memberNode.path.split(`/`);
+            const baseName = parts[parts.length - 1];
+            const lib = parts[parts.length - 3];
+
             const noExt = baseName.substr(0, baseName.lastIndexOf(`.`));
 
             defaults = {
@@ -234,7 +237,7 @@ module.exports = class Coverage {
     wizard.addField(field);
 
     field = new Field(`input`, `bindingDirectory`, `Binding directory`);
-    field.description = `If you specify a binding directory, the coverage test will include the results for the service programs in that object if they are used by the program. You can leave this blank to not include them.`
+    field.description = `If you specify a binding directory, the coverage test will include the results for the service programs in that object if they are used by the program. You can leave this blank to not include them. Must be qualified object path (<code>LIB/OBJ</code>)`
     field.default = fields.bindingDirectory;
     wizard.addField(field);
 

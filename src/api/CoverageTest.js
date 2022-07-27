@@ -31,7 +31,6 @@ module.exports = class CoverageTest {
    * @returns {string[]}
    */
   static async getServicePrograms(path) {
-    const connection = instance.getConnection();
     const content = instance.getContent();
     const config = instance.getConfig();
 
@@ -63,9 +62,6 @@ module.exports = class CoverageTest {
   }
 
   async runConverage() {
-    const connection = instance.getConnection();
-    const config = instance.getConfig();
-
     const outputZip = `/tmp/${new Date().getTime()}.cczip`;
 
     /** @type {ListItem[]} */
@@ -87,17 +83,22 @@ module.exports = class CoverageTest {
       }
     }
 
-    const bnddir = await vscode.commands.executeCommand(`code-for-ibmi.runCommand`, {
+    const execution = await vscode.commands.executeCommand(`code-for-ibmi.runCommand`, {
       command: `CODECOV CMD(${this.command}) MODULE(${moduleList.join(` `)}) OUTSTMF('${outputZip}')`,
       environment: `ile`
     });
 
-    if (bnddir.code === 0 || bnddir.code === null) {
+    if (execution.code === 0 || execution.code === null) {
       items = await this.getCoverage(outputZip);
 
       return items;
     } else {
-      vscode.window.showErrorMessage(bnddir.stderr);
+      vscode.window.showErrorMessage(execution.stderr, `Show Output`)
+        .then(async (item) => {
+          if (item === `Show Output`) {
+            vscode.commands.executeCommand(`code-for-ibmi.showOutputPanel`);
+          }
+        });
     }
 
     return items;
