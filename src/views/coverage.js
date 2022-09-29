@@ -95,10 +95,6 @@ module.exports = class Coverage {
       }),
 
     );
-
-    instance.on(`connected`, () => {
-      this.refresh();
-    });
   }
 
   /**
