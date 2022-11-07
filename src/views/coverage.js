@@ -168,11 +168,12 @@ module.exports = class Coverage {
    */
   async getTests() {
     const config = instance.getConfig();
-    let tests = config.get(`coverageTests`);
+    let tests = config[`coverageTests`];
 
     if (!tests) {
       tests = [];
-      await config.set(`coverageTests`, tests);
+      config[`coverageTests`] = [];
+      await instance.setConfig(config);
     } else {
       tests.forEach((test, index) => {
         test.id = index;
@@ -184,12 +185,13 @@ module.exports = class Coverage {
 
   async deleteTest(id) {
     const config = instance.getConfig();
-    let tests = config.get(`coverageTests`);
+    let tests = config[`coverageTests`];
 
     if (tests[id]) {
       tests.splice(id, 1);
+      config[`coverageTests`] = tests;
+      await instance.setConfig(config);
 
-      config.set(`coverageTests`, tests);
       this.refresh();
     }
   }
@@ -201,7 +203,7 @@ module.exports = class Coverage {
    */
   async maintainTest(id, defaults = {}) {
     const config = instance.getConfig();
-    let tests = config.get(`coverageTests`);
+    let tests = config[`coverageTests`];
 
     let fields = {
       name: defaults.name || ``,
@@ -254,7 +256,8 @@ module.exports = class Coverage {
           tests.push(fields);
         }
     
-        config.set(`coverageTests`, tests);
+        config[`coverageTests`] = tests;
+        await instance.setConfig(config);
         this.refresh();
       }
     }
