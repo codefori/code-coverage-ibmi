@@ -1,16 +1,12 @@
 
 const vscode = require(`vscode`);
+const cczip = require(`./cczip`);
 
 const tmp = require(`tmp`);
-const path = require(`path`);
-const fs = require(`fs`);
-const unzipper = require(`unzipper`);
 const util = require(`util`);
-let parseString = util.promisify(require(`xml2js`).parseString);
 
 const tmpFile = util.promisify(tmp.file);
 const tmpDir = util.promisify(tmp.dir);
-const readFileAsync = util.promisify(fs.readFile);
 
 const {instance} = vscode.extensions.getExtension(`halcyontechltd.code-for-ibmi`).exports;
 
@@ -89,7 +85,7 @@ module.exports = class CoverageTest {
     });
 
     if (execution.code === 0 || execution.code === null) {
-      items = await this.getCoverage(outputZip);
+      items = await CoverageTest.getCoverage(outputZip);
 
       return items;
     } else {
@@ -104,167 +100,26 @@ module.exports = class CoverageTest {
     return items;
   }
 
-  async getCoverage(outputZip) {
+  static async downloadCCZip(outputZip) {
     const content = instance.getConnection();
     const client = content.client;
 
     const tmpobj = await tmpFile({});
     const tmpdir = await tmpDir({});
-    let items = [];
 
     await client.getFile(tmpobj, outputZip);
 
     console.log(`Zip downloaded`);
 
-    await fs
-      .createReadStream(tmpobj)
-      .pipe(unzipper.Extract({ path: tmpdir }))
-      .promise();
+    await cczip.extractZip(tmpobj, tmpdir);
 
     console.log(`Zip extracted`);
 
-    const xml = await readFileAsync(path.join(tmpdir, `ccdata`));
-
-    console.log(`CCdata read`);
-
-    const coverageResult = await parseString(xml);
-
-    console.log(`XML parser`);
-
-    let data, testCase, sourceCode,  activeLines, indexesExecuted;
-    let lineKeys, percentRan, countRan;
-    for (const source of coverageResult.LLC.lineLevelCoverageClass) {
-      console.log(source.testcase);
-      data = source[`$`];
-
-      if (source.testcase === undefined) {
-        //Indicates that no lines were ran
-        testCase = { hits: `` };
-      } else {
-        testCase = source.testcase[0][`$`];
-      }
-
-      sourceCode = (
-        await readFileAsync(
-          path.join(tmpdir, `src`, data.baseFileName),
-          `utf8`,
-        )
-      ).split(`\n`);
-
-      const realHits = testCase.v2fileHits || testCase.hits;
-      const realLines = data.v2fileLines || data.lines;
-      const realSigs = data.v2qualifiedSignatures || data.signatures;
-
-      indexesExecuted = this.getRunLines(sourceCode.length, realHits);
-      activeLines = this.getLines(realLines, indexesExecuted);
-
-      lineKeys = Object.keys(activeLines);
-
-      countRan = 0;
-      lineKeys.forEach(key => {
-        if (activeLines[key] === true) countRan++;
-      })
-
-      percentRan = ((countRan / lineKeys.length) * 100).toFixed(0);
-
-      items.push({
-        basename: path.basename(data.sourceFile),
-        path: data.sourceFile,
-        localPath: path.join(tmpdir, `src`, data.baseFileName),
-        coverage: {
-          signitures: realSigs.split(`+`),
-          lineString: realLines,
-          activeLines,
-          percentRan
-        },
-      });
-    }
-
-    return items;
+    return tmpdir;
   }
 
-  getLines(string, indexesExecuted) {
-    let lineNumbers = [];
-    let line = 0;
-    let currentValue = ``;
-    let concat = false;
-  
-    for (const char of string) {
-      switch (char) {
-      case `#`:
-        if (currentValue !== ``) {
-          line = Number(currentValue);
-          lineNumbers.push(line);
-        }
-
-        concat = true;
-        line = 0;
-        currentValue = ``;
-        break;
-
-      case `,`:
-        if (currentValue !== ``) {
-          line = Number(currentValue);
-          lineNumbers.push(line);
-        }
-        currentValue = ``;
-        break;
-
-      case `+`:
-        line = Number(currentValue);
-        lineNumbers.push(line);
-        concat = false;
-        break;
-
-      default:
-        if (concat) currentValue += char;
-        else {
-          currentValue = ``
-          line += Number(char);
-          lineNumbers.push(line);
-        }
-        break;
-      }
-    }
-  
-    let lines = {};
-  
-    for (const i in lineNumbers) {
-      lines[lineNumbers[i]] = indexesExecuted.includes(Number(i));
-    }
-  
-    return lines;
-  }
-
-  getRunLines(numLines, hits) {
-    let hitLines =  [];
-  
-    let hitChar;
-    for (let i = 0, lineIndex = 0; lineIndex < numLines && i < hits.length; i++) {
-      hitChar = hits.charCodeAt(i);
-  
-      if (hitChar <= 80) {
-        hitChar -= 65;
-  
-        if (hitChar === 0) {
-          lineIndex += 4;
-        } else {
-          if ((hitChar & 8) !== 0) 
-            hitLines.push(lineIndex);
-          lineIndex++;
-          if ((hitChar & 4) !== 0 && lineIndex < numLines)
-            hitLines.push(lineIndex);
-          lineIndex++;
-          if ((hitChar & 2) !== 0 && lineIndex < numLines)
-            hitLines.push(lineIndex);
-          lineIndex++;
-          if ((hitChar & 1) !== 0 && lineIndex < numLines)
-            hitLines.push(lineIndex);
-          lineIndex++;
-        }
-      }
-    }
-  
-    return hitLines;
+  static async getCoverage(outputZip) {
+    const localExtractDir = CoverageTest.downloadCCZip(outputZip);
+    return await cczip.parseCoverage(localExtractDir);
   }
 }
