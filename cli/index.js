@@ -31,7 +31,7 @@ const start = async () => {
         await printCoverage(source.localPath, source.coverage.activeLines);
       }
     });
-    
+
   } else {
     console.log(result.execution.stderr);
   }
@@ -45,7 +45,8 @@ const printCoverage = async (localPath, activeLines) => {
 
   for (let i = 0; i < lines.length; i++) {
     const lineNumber = String(i+1);
-    console.log(`\t${activeLines[lineNumber] ? `R` : `N`} ${lineNumber.padEnd(5)} ${lines[i]}`);
+    const runFlag = (typeof activeLines[lineNumber] === `boolean` ? (activeLines[lineNumber] ? `R` : `N`) : ` `);
+    console.log(`\t${runFlag} ${lineNumber.padEnd(5)} ${lines[i]}`);
   }
 }
 

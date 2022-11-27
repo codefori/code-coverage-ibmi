@@ -28,7 +28,6 @@ exports.runner = async (program) => {
  * @returns {{stderr: string, stdout: string}}
  */
 function execShellCommand(cmd) {
-  console.log(cmd);
   return new Promise((resolve, reject) => {
     exec(cmd, (error, stdout, stderr) => {
       resolve({
